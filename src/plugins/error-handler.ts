@@ -29,11 +29,18 @@ export default fp(async function errorHandlerPlugin(fastify: FastifyInstance) {
       });
     }
 
-    request.log.error(error);
     const statusCode = error.statusCode ?? 500;
+    if (statusCode >= 500) {
+      request.log.error(error);
+      return reply.status(statusCode).send({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Internal server error",
+      });
+    }
+
     return reply.status(statusCode).send({
-      code: "INTERNAL_SERVER_ERROR",
-      message: statusCode === 500 ? "Internal server error" : error.message,
+      code: (error as { code?: string }).code ?? "ERROR",
+      message: error.message,
     });
   });
 });
