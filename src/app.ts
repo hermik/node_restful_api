@@ -40,9 +40,9 @@ export async function buildApp() {
 
   app.get("/health", { schema: { hide: true } }, async () => ({ status: "ok" }));
 
-  await app.register(authRoutes, { prefix: "/api/auth" });
-  await app.register(userRoutes, { prefix: "/api/users" });
-  await app.register(postRoutes, { prefix: "/api/posts" });
+  await app.register(authRoutes, { prefix: "/v1/auth" });
+  await app.register(userRoutes, { prefix: "/v1/users" });
+  await app.register(postRoutes, { prefix: "/v1/posts" });
 
   return app;
 }
