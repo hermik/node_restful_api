@@ -33,16 +33,21 @@ function createRefreshTokenRecord(overrides: Partial<RefreshToken> = {}): Refres
 
 describe("AuthService", () => {
   let usersRepository: {
-    findByEmail: jest.Mock;
-    findById: jest.Mock;
-    create: jest.Mock;
+    findByEmail: jest.MockedFunction<(email: string) => Promise<User | undefined>>;
+    findById: jest.MockedFunction<(id: string) => Promise<User | undefined>>;
+    create: jest.MockedFunction<
+      (user: Omit<User, "id" | "createdAt" | "updatedAt">) => Promise<User>
+    >;
   };
   let refreshTokensRepository: {
-    create: jest.Mock;
-    findByHash: jest.Mock;
-    revoke: jest.Mock;
+    create: jest.MockedFunction<
+      (token: Omit<RefreshToken, "id" | "createdAt">) => Promise<RefreshToken>
+    >;
+    findByHash: jest.MockedFunction<(hash: string) => Promise<RefreshToken | undefined>>;
+    revoke: jest.MockedFunction<(id: string) => Promise<void>>;
   };
-  let signAccessToken: jest.Mock;
+  type SignAccessToken = ConstructorParameters<typeof AuthService>[2];
+  let signAccessToken: jest.MockedFunction<SignAccessToken>;
   let service: AuthService;
 
   beforeEach(() => {
@@ -56,7 +61,9 @@ describe("AuthService", () => {
       findByHash: jest.fn(),
       revoke: jest.fn(),
     };
-    signAccessToken = jest.fn().mockReturnValue("signed.jwt.token");
+    signAccessToken = jest
+      .fn<SignAccessToken>()
+      .mockReturnValue("signed.jwt.token");
 
     service = new AuthService(
       usersRepository as unknown as UsersRepository,
