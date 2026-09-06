@@ -1,13 +1,23 @@
-# node-api-claude
+# node-api 
 
-This is my implementantion of modern nodejs Restful API.
-Audtodocumentation + all typed and validated. Feel free to use it.
+This is my implementantion of modern nodejs Restful API. Its good starter point / boilerplate.
+Everythink you need for production level API.
+This code implements well structured modular approach with those layers:
+request->controller->service->repository->db.
+
+Controller: light, hits the service
+Service: Here you can put your buisness logic (it dont need to know enythinh about http requests or databases)
+Repository: Repository talks to db, you can use different DBs
+
 
 REST API
 Stack used: **Fastify + TypeScript + Drizzle ORM (PostgreSQL)**, 
-Architecture layers: `controller -> service -> repository -> db`.
-Authentication: JWT (`@fastify/jwt`) + refresh tokens
+Architecture layers: `controller -> service -> repository -> db`,
+Authentication: JWT (`@fastify/jwt`) + refresh tokens,
+Validation: every request and responce is validated by zod,
+Error handling,
 Auto documentation: Swagger/OpenAPI (`@fastify/swagger` + `@fastify/swagger-ui`).
+Tests: every test is in modules/<modulke>/*.test.js (using jast)
 
 ## Stack
 
@@ -17,6 +27,7 @@ Auto documentation: Swagger/OpenAPI (`@fastify/swagger` + `@fastify/swagger-ui`)
 - **Drizzle ORM** (`postgres-js` driver) — for db and migrations
 - **@fastify/jwt** — auth  Bearer token, hook `fastify.authenticate` 
 - **bcryptjs** — password encryption
+- **jast** - for unit tests.
 
 ## Auth: access token + refresh token
 
@@ -70,10 +81,10 @@ drizzle/          # wygenerowane migracje SQL
 drizzle.config.ts  # konfiguracja drizzle-kit
 ```
 
-Każdy moduł ma ten sam schemat plików: `*.schema.ts` (zod), `*.repository.ts` (Drizzle/db),
+Every module have this schema: `*.schema.ts` (zod), `*.repository.ts` (Drizzle/db),
 `*.service.ts` (logika biznesowa, rzuca `AppError`), `*.controller.ts` (handlery HTTP),
 `*.routes.ts` (rejestracja routów + wiring warstw + schema OpenAPI).
-
+`*.test.ts` (for unit test - using jast).
 ## Start
 
 ```bash
@@ -107,7 +118,9 @@ npm run db:studio     # GUI do przeglądania danych (drizzle-kit studio)
 6. Zarejestruj plugin w `src/app.ts`: `await app.register(commentRoutes, { prefix: "/api/comments" })`
 
 ## Znane ograniczenia / do rozważenia później
-
+- Rate limiting
+- Cache
+- Queue like BullMQ + Redis for delayed operations.
 - `drizzle-kit` ma pośrednią (dev-only) podatność moderate w `esbuild` — dotyczy tylko
   lokalnego dev-servera esbuild, nieużywanego w tym projekcie w czasie działania API;
   do przeglądu przy kolejnych podbiciach `drizzle-kit`.
