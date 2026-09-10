@@ -6,14 +6,7 @@ import { UsersRepository } from "../users/users.repository.js";
 import { RefreshTokensRepository } from "./refresh-tokens.repository.js";
 import { AuthService } from "./auth.service.js";
 import { AuthController } from "./auth.controller.js";
-import {
-  authResponseSchema,
-  loginBodySchema,
-  logoutBodySchema,
-  refreshBodySchema,
-  registerBodySchema,
-  tokenPairSchema,
-} from "./auth.schema.js";
+import { accessTokenSchema, authResponseSchema, loginBodySchema, registerBodySchema } from "./auth.schema.js";
 
 export default async function authRoutes(fastify: FastifyInstance) {
   const usersRepository = new UsersRepository(fastify.db);
@@ -24,7 +17,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
     (payload) => fastify.jwt.sign(payload),
     env.REFRESH_TOKEN_TTL_DAYS,
   );
-  const controller = new AuthController(authService);
+  const controller = new AuthController(authService, {
+    refreshTokenTtlDays: env.REFRESH_TOKEN_TTL_DAYS,
+    secureCookie: env.NODE_ENV === "production",
+  });
 
   const app = fastify.withTypeProvider<ZodTypeProvider>();
 
@@ -38,7 +34,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
         tags: ["Auth"],
         summary: "Register a new user",
         description:
-          "Creates a new user account with the given email, password and name, then returns an access + refresh token pair along with the created user.",
+          "Creates a new user account with the given email, password and name. Returns the access token " +
+          "and user in the response body, and sets the refresh token as an httpOnly cookie.",
         body: registerBodySchema,
         response: { 201: authResponseSchema },
       },
@@ -54,9 +51,10 @@ export default async function authRoutes(fastify: FastifyInstance) {
       },
       schema: {
         tags: ["Auth"],
-        summary: "Log in and receive an access + refresh token pair",
+        summary: "Log in and receive an access token",
         description:
-          "Verifies the user's email and password, then issues a new access + refresh token pair on success.",
+          "Verifies the user's email and password. Returns the access token and user in the response body, " +
+          "and sets the refresh token as an httpOnly cookie.",
         body: loginBodySchema,
         response: { 200: authResponseSchema },
       },
@@ -69,11 +67,11 @@ export default async function authRoutes(fastify: FastifyInstance) {
     {
       schema: {
         tags: ["Auth"],
-        summary: "Exchange a refresh token for a new access + refresh token pair (rotation)",
+        summary: "Exchange the refresh token cookie for a new access token (rotation)",
         description:
-          "Validates the given refresh token, revokes it, and issues a new access + refresh token pair. Used to keep a session alive without re-authenticating.",
-        body: refreshBodySchema,
-        response: { 200: tokenPairSchema },
+          "Reads the refresh token from the httpOnly cookie, rotates it (revokes the old one and sets a new " +
+          "one as a cookie), and returns a new access token in the response body.",
+        response: { 200: accessTokenSchema },
       },
     },
     controller.refresh,
@@ -84,9 +82,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
     {
       schema: {
         tags: ["Auth"],
-        summary: "Revoke a refresh token",
-        description: "Invalidates the given refresh token so it can no longer be used to obtain new tokens.",
-        body: logoutBodySchema,
+        summary: "Log out",
+        description: "Revokes the refresh token from the httpOnly cookie, if present, and clears the cookie.",
       },
     },
     controller.logout,

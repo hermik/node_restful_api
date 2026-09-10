@@ -13,6 +13,7 @@ import jwtPlugin from "./plugins/jwt.js";
 import swaggerPlugin from "./plugins/swagger.js";
 import errorHandlerPlugin from "./plugins/error-handler.js";
 import rateLimitPlugin from "./plugins/rate-limit.js";
+import cookiePlugin from "./plugins/cookie.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 import userRoutes from "./modules/users/users.routes.js";
@@ -36,6 +37,7 @@ export async function buildApp() {
   await app.register(sensible);
   await app.register(cors, { origin: env.CORS_ORIGIN === "*" ? true : env.CORS_ORIGIN.split(",") });
   await app.register(rateLimitPlugin);
+  await app.register(cookiePlugin);
   await app.register(dbPlugin);
   await app.register(jwtPlugin);
   await app.register(swaggerPlugin);

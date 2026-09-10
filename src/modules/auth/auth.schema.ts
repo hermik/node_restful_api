@@ -15,24 +15,13 @@ export const loginBodySchema = z.object({
   password: z.string().min(1, "Password is required").describe("User's password"),
 });
 
-export const refreshBodySchema = z.object({
-  refreshToken: z.string().min(1, "refreshToken is required").describe("Valid refresh token previously issued to the client"),
-});
-
-export const logoutBodySchema = z.object({
-  refreshToken: z.string().min(1, "refreshToken is required").describe("Refresh token to revoke"),
-});
-
-export const tokenPairSchema = z.object({
+export const accessTokenSchema = z.object({
   accessToken: z.string().describe("Short-lived JWT used to authorize API requests"),
-  refreshToken: z.string().describe("Long-lived token used to obtain a new access token"),
 });
 
-export const authResponseSchema = tokenPairSchema.extend({
+export const authResponseSchema = accessTokenSchema.extend({
   user: publicUserSchema,
 });
 
 export type RegisterBody = z.infer<typeof registerBodySchema>;
 export type LoginBody = z.infer<typeof loginBodySchema>;
-export type RefreshBody = z.infer<typeof refreshBodySchema>;
-export type LogoutBody = z.infer<typeof logoutBodySchema>;
