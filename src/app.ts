@@ -36,7 +36,10 @@ export async function buildApp() {
 
   await app.register(errorHandlerPlugin);
   await app.register(sensible);
-  await app.register(cors, { origin: env.CORS_ORIGIN === "*" ? true : env.CORS_ORIGIN.split(",") });
+  await app.register(cors, {
+    origin: env.CORS_ORIGIN === "*" ? true : env.CORS_ORIGIN.split(",").map((origin) => origin.trim()),
+    credentials: true,
+  });
   await app.register(rateLimitPlugin);
   await app.register(cookiePlugin);
   await app.register(dbPlugin);
