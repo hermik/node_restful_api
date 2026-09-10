@@ -18,6 +18,7 @@ import cookiePlugin from "./plugins/cookie.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import userRoutes from "./modules/users/users.routes.js";
 import postRoutes from "./modules/posts/posts.routes.js";
+import testRoutes from "./modules/test/test.routes.js";
 
 export async function buildApp() {
   const app = Fastify({
@@ -47,6 +48,10 @@ export async function buildApp() {
   await app.register(authRoutes, { prefix: "/v1/auth" });
   await app.register(userRoutes, { prefix: "/v1/users" });
   await app.register(postRoutes, { prefix: "/v1/posts" });
+
+  if (env.NODE_ENV !== "production") {
+    await app.register(testRoutes, { prefix: "/v1/test" });
+  }
 
   return app;
 }
