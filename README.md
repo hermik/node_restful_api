@@ -1,131 +1,131 @@
-# node-api 
+# node-api
 
-This is my implementantion of modern nodejs Restful API. Its good starter point / boilerplate.
-Everythink you need for production level API.
-This code implements well structured modular approach with layers:
-request->controller->service->repository->db.
+This is my implementation of a modern Node.js RESTful API. It provides a solid starting point / boilerplate for building production-ready APIs.
 
-- Controller: light, hits the service
-- Service: Here you can put your buisness logic (it dont need to know enythinh about http requests or databases)
-- Repository: Repository talks to db, you can use different DBs
+The project follows a well-structured, modular, layered architecture:
 
+`request -> controller -> service -> repository -> db`
 
-REST API
-Stack used: **Fastify + TypeScript + Drizzle ORM (PostgreSQL)**, 
-Architecture layers: `controller -> service -> repository -> db`,
-Authentication: JWT (`@fastify/jwt`) + refresh tokens,
-Validation: every request and responce is validated by zod,
-Error handling,
-Auto documentation: Swagger/OpenAPI (`@fastify/swagger` + `@fastify/swagger-ui`).
-Tests: every test is in modules/<modulke>/*.test.js (using jast)
+* **Controller**: Lightweight layer that handles requests and calls the service.
+* **Service**: Contains business logic. It does not need to know anything about HTTP requests or databases.
+* **Repository**: Communicates with the database. Different databases can be used by providing different repository implementations.
+
+## REST API
+
+Stack: **Fastify + TypeScript + Drizzle ORM (PostgreSQL)**
+Architecture: `controller -> service -> repository -> db`
+Authentication: JWT (`@fastify/jwt`) + refresh tokens
+Validation: Every request and response is validated using Zod
+Error handling
+Automatic documentation: Swagger/OpenAPI (`@fastify/swagger` + `@fastify/swagger-ui`)
+Tests: Tests are located in `modules/<module>/*.test.ts` and use Jest.
 
 ## Stack
 
-- **Fastify 5** — express replacement
-- **TypeScript** — `NodeNext` moduły (relatywne importy z rozszerzeniem `.js`)
-- **Zod** + `fastify-type-provider-zod` — for request validation
-- **Drizzle ORM** (`postgres-js` driver) — for db and migrations
-- **@fastify/jwt** — auth  Bearer token, hook `fastify.authenticate` 
-- **bcryptjs** — password encryption
-- **jast** - for unit tests.
+* **Fastify 5** — Express replacement
+* **TypeScript** — `NodeNext` modules (relative imports with the `.js` extension)
+* **Zod** + `fastify-type-provider-zod` — request and response validation
+* **Drizzle ORM** (`postgres-js` driver) — database access and migrations
+* **@fastify/jwt** — Bearer token authentication using the `fastify.authenticate` hook
+* **bcryptjs** — password hashing
+* **Jest** — unit testing
 
 ## Auth: access token + refresh token
 
-- **Access token** (JWT, podpisany `@fastify/jwt`) — krótki czas życia (`JWT_EXPIRES_IN`, domyślnie `15m`),
-  wysyłany jako `Authorization: Bearer <accessToken>`, weryfikowany przez `fastify.authenticate`.
-- **Refresh token** (losowy string, `crypto.randomBytes(40).toString("hex")`) — długi czas życia
-  (`REFRESH_TOKEN_TTL_DAYS`, domyślnie 30 dni). W bazie (`refresh_tokens`) trzymany jest tylko
-  **sha256 hash** tokenu, nigdy wartość jawna — patrz [auth.service.ts](src/modules/auth/auth.service.ts).
-- **Rotacja**: każde użycie `POST /api/auth/refresh` unieważnia stary refresh token i wydaje nową parę
-  (access + refresh). Próba ponownego użycia już zużytego/unieważnionego tokenu zwraca `401`.
-- **Logout**: `POST /api/auth/logout` z `{ refreshToken }` w body unieważnia konkretny token.
+* **Access token** (JWT, signed using `@fastify/jwt`) — short-lived (`JWT_EXPIRES_IN`, default: `15m`).
+  It is sent as `Authorization: Bearer <accessToken>` and verified by `fastify.authenticate`.
+* **Refresh token** (random string generated using `crypto.randomBytes(40).toString("hex")`) — long-lived
+  (`REFRESH_TOKEN_TTL_DAYS`, default: 30 days). Only the **SHA-256 hash** of the token is stored
+  in the database (`refresh_tokens`), never the plaintext value — see [auth.service.ts](src/modules/auth/auth.service.ts).
+* **Rotation**: Every call to `POST /api/auth/refresh` invalidates the previous refresh token and issues a new token pair
+  (access + refresh). Attempting to reuse an already used or revoked token returns `401`.
+* **Logout**: `POST /api/auth/logout` with `{ refreshToken }` in the request body invalidates the specified token.
 
 Example endpoints:
 
-| Metoda | Ścieżka              | Body                              | Auth |
-|--------|----------------------|------------------------------------|------|
-| POST   | `/api/auth/register` | `email, password, name`            | -    |
-| POST   | `/api/auth/login`    | `email, password`                  | -    |
-| POST   | `/api/auth/refresh`  | `refreshToken`                     | -    |
-| POST   | `/api/auth/logout`   | `refreshToken`                     | -    |
+| Method | Path                 | Body                    | Auth |
+| ------ | -------------------- | ----------------------- | ---- |
+| POST   | `/api/auth/register` | `email, password, name` | -    |
+| POST   | `/api/auth/login`    | `email, password`       | -    |
+| POST   | `/api/auth/refresh`  | `refreshToken`          | -    |
+| POST   | `/api/auth/logout`   | `refreshToken`          | -    |
 
-Typowy flow klienta: zaloguj się raz, trzymaj `refreshToken` (bezpieczne miejsce po stronie klienta),
-używaj `accessToken` do zwykłych requestów; gdy dostaniesz `401` (token wygasł), wywołaj `/refresh`
-po nową parę tokenów zamiast ponownie prosić użytkownika o hasło.
+Typical client flow: log in once and store the `refreshToken` in a secure location on the client side.
+Use the `accessToken` for regular requests. When a request returns `401` because the access token has expired,
+call `/refresh` to obtain a new token pair instead of asking the user to enter their password again.
 
-Nie ma jeszcze mechanizmu czyszczenia wygasłych/unieważnionych wpisów z `refresh_tokens` (np. cron) —
-do rozważenia przy skalowaniu.
+There is currently no mechanism for cleaning up expired or revoked entries from `refresh_tokens` (for example, using a cron job).
+This should be considered when scaling the application.
 
 ## Structure
 
 ```
 src/
-  config/env.ts          # walidacja zmiennych środowiskowych (zod)
+  config/env.ts          # environment variable validation (Zod)
   db/
-    schema.ts             # tabele Drizzle (users, posts)
-    client.ts              # instancja drizzle + klient postgres
-    migrate.ts              # runner migracji
+    schema.ts            # Drizzle tables (users, posts)
+    client.ts            # Drizzle instance + PostgreSQL client
+    migrate.ts           # migration runner
   plugins/
-    db.ts                   # dekoruje fastify.db
-    jwt.ts                    # @fastify/jwt + fastify.authenticate
-    swagger.ts                  # OpenAPI + Swagger UI (/docs)
-    error-handler.ts             # mapowanie błędów (AppError, Zod) na JSON
-  common/errors.ts           # AppError, NotFoundError, ConflictError, UnauthorizedError, ForbiddenError
+    db.ts                # decorates fastify.db
+    jwt.ts               # @fastify/jwt + fastify.authenticate
+    swagger.ts           # OpenAPI + Swagger UI (/docs)
+    error-handler.ts     # maps errors (AppError, Zod) to JSON responses
+  common/errors.ts       # AppError, NotFoundError, ConflictError, UnauthorizedError, ForbiddenError
   modules/
-    auth/       # register, login (publiczne)
-    users/      # /me (chroniony), lista/detale (chronione)
-    posts/      # GET publiczne, POST/PATCH/DELETE chronione + sprawdzanie właściciela
-  app.ts        # budowa instancji Fastify, rejestracja pluginów i modułów
-  server.ts     # start + graceful shutdown
-drizzle/          # wygenerowane migracje SQL
-drizzle.config.ts  # konfiguracja drizzle-kit
+    auth/                # register, login (public)
+    users/               # /me (protected), list/details (protected)
+    posts/               # GET public, POST/PATCH/DELETE protected + ownership checks
+  app.ts                 # builds the Fastify instance and registers plugins and modules
+  server.ts              # startup + graceful shutdown
+drizzle/                 # generated SQL migrations
+drizzle.config.ts        # drizzle-kit configuration
 ```
 
-Every module have this schema: `*.schema.ts` (zod), `*.repository.ts` (Drizzle/db),
-`*.service.ts` (logika biznesowa, rzuca `AppError`), `*.controller.ts` (handlery HTTP),
-`*.routes.ts` (rejestracja routów + wiring warstw + schema OpenAPI).
-`*.test.ts` (for unit test - using jast).
+Every module follows this structure:
+
+* `*.schema.ts` — Zod schemas
+* `*.repository.ts` — database access using Drizzle
+* `*.service.ts` — business logic, throws `AppError`
+* `*.controller.ts` — lightweight HTTP handlers
+* `*.routes.ts` — route registration, layer wiring, and OpenAPI schemas
+* `*.test.ts` — unit tests using Jest
+
 ## Start
 
 ```bash
-cp .env.example .env   # i uzupełnij JWT_SECRET / DATABASE_URL
+cp .env.example .env   # fill in JWT_SECRET / DATABASE_URL
 npm install
-npm run db:migrate     # nakłada migracje z ./drizzle na bazę z DATABASE_URL
+npm run db:migrate     # applies migrations from ./drizzle to the database specified by DATABASE_URL
 npm run dev            # tsx watch, http://localhost:3000
 ```
 
-Dokumentacja Swagger: `http://localhost:3000/docs`
+Swagger documentation: `http://localhost:3000/docs`
 
-
-
-## Zmiana schematu / migracje
+## Schema changes / migrations
 
 ```bash
-# 1. edytuj src/db/schema.ts
-npm run db:generate   # generuje SQL do ./drizzle na podstawie diffu schematu
-npm run db:migrate    # nakłada migracje na bazę
-npm run db:studio     # GUI do przeglądania danych (drizzle-kit studio)
+# 1. Edit src/db/schema.ts
+npm run db:generate   # generates SQL in ./drizzle based on schema changes
+npm run db:migrate    # applies migrations to the database
+npm run db:studio     # GUI for browsing database data (drizzle-kit studio)
 ```
 
-## Dodawanie nowego modułu (np. "comments")
+## Adding a new module (e.g. "comments")
 
-1. `src/modules/comments/comments.schema.ts` — zod schematy body/params/response
-2. `src/modules/comments/comments.repository.ts` — klasa z metodami CRUD na `Database`
-3. `src/modules/comments/comments.service.ts` — logika biznesowa, walidacja uprawnień, `AppError`
-4. `src/modules/comments/comments.controller.ts` — cienkie handlery wołające service
-5. `src/modules/comments/comments.routes.ts` — rejestracja routów + `schema` (dla Swaggera) +
-   `onRequest: [fastify.authenticate]` na endpointach wymagających logowania
-6. Zarejestruj plugin w `src/app.ts`: `await app.register(commentRoutes, { prefix: "/api/comments" })`
+1. `src/modules/comments/comments.schema.ts` — Zod schemas for body/params/response
+2. `src/modules/comments/comments.repository.ts` — class with CRUD methods operating on `Database`
+3. `src/modules/comments/comments.service.ts` — business logic, authorization checks, `AppError`
+4. `src/modules/comments/comments.controller.ts` — lightweight handlers that call the service
+5. `src/modules/comments/comments.routes.ts` — route registration + `schema` (for Swagger) +
+   `onRequest: [fastify.authenticate]` for endpoints that require authentication
+6. Register the plugin in `src/app.ts`: `await app.register(commentRoutes, { prefix: "/api/comments" })`
 
-## Znane ograniczenia / do rozważenia później
-- Rate limiting
-- Cache
-- Queue like BullMQ + Redis for delayed operations.
-- `drizzle-kit` ma pośrednią (dev-only) podatność moderate w `esbuild` — dotyczy tylko
-  lokalnego dev-servera esbuild, nieużywanego w tym projekcie w czasie działania API;
-  do przeglądu przy kolejnych podbiciach `drizzle-kit`.
-- `zod` jest celowo przypięty na `3.24.4` (a nie najnowszy `3.25.x+`), bo
-  `fastify-type-provider-zod@4` nie jest jeszcze kompatybilny ze zbundlowanym
-  silnikiem "zod v4" w nowszych wydaniach `zod` 3.25+ (crash przy walidacji).
-  Przy przyszłym upgrade `fastify-type-provider-zod` do wersji wspierającej zod v4
-  (`>=6`) trzeba podnieść też `zod` do `^4.x` i zaktualizować `overrides`.
+## Known limitations / future considerations
+
+* Cache
+* Queue such as BullMQ + Redis for delayed operations
+* `drizzle-kit` has an indirect, development-only moderate vulnerability in `esbuild`. It only affects
+  the local esbuild development server, which is not used by this project while the API is running.
+  This should be reviewed when upgrading `drizzle-kit` in the future.
+
