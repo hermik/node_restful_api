@@ -2,12 +2,12 @@
 
 This is my implementantion of modern nodejs Restful API. Its good starter point / boilerplate.
 Everythink you need for production level API.
-This code implements well structured modular approach with those layers:
+This code implements well structured modular approach with layers:
 request->controller->service->repository->db.
 
-Controller: light, hits the service
-Service: Here you can put your buisness logic (it dont need to know enythinh about http requests or databases)
-Repository: Repository talks to db, you can use different DBs
+- Controller: light, hits the service
+- Service: Here you can put your buisness logic (it dont need to know enythinh about http requests or databases)
+- Repository: Repository talks to db, you can use different DBs
 
 
 REST API
