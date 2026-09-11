@@ -16,6 +16,10 @@ export class PostsService {
     }
     return post;
   }
+  
+  async filterByTitle(query: string) {
+    return this.postsRepository.filterByTitle(query);
+  }
 
   async create(authorId: string, data: CreatePostBody) {
     return this.postsRepository.create({ ...data, authorId });

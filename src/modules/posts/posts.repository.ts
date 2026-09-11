@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, ilike } from "drizzle-orm";
 import type { Database } from "../../db/client.js";
 import { posts, type NewPost, type Post } from "../../db/schema.js";
 
@@ -8,12 +8,16 @@ export class PostsRepository {
   async listPublished(): Promise<Post[]> {
     return this.db.select().from(posts).where(eq(posts.published, true));
   }
+  
 
   async findById(id: string): Promise<Post | undefined> {
     const [post] = await this.db.select().from(posts).where(eq(posts.id, id));
     return post;
   }
 
+  async filterByTitle(query: string): Promise<Post[]> {
+    return this.db.select().from(posts).where(ilike(posts.title, `%${query}%`));
+  }
   async findPublishedById(id: string): Promise<Post | undefined> {
     const [post] = await this.db
       .select()

@@ -14,6 +14,11 @@ export class PostsController {
     return this.postsService.getPublishedById(id);
   };
 
+  filterTitle = async (request: FastifyRequest, _reply: FastifyReply) => {
+    const { query } = request.query as { query: string };
+    return this.postsService.filterByTitle(query);
+  };
+
   create = async (request: FastifyRequest, reply: FastifyReply) => {
     const post = await this.postsService.create(request.user.id, request.body as CreatePostBody); 
     reply.code(201);

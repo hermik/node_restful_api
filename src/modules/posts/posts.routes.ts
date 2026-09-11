@@ -44,6 +44,19 @@ export default async function postRoutes(fastify: FastifyInstance) {
     controller.getById,
   );
 
+  app.get(
+    "/filter",
+    {
+      schema: {
+        tags: ["Posts"],
+        summary: "Filter posts by title (public)",
+        querystring: z.object({ query: z.string() }),
+        response: { 200: z.array(postResponseSchema) },
+      },
+    },
+    controller.filterTitle,
+  );
+
   app.post(
     "/",
     {
