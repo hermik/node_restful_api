@@ -25,7 +25,6 @@ Tests: Tests are located in `modules/<module>/*.test.ts` and use Jest.
 * **Fastify** — Express replacement
 * **TypeScript** — `NodeNext` modules (relative imports with the `.js` extension)
 * **Zod** + `fastify-type-provider-zod` — request and response validation
-* **JWT** - for access token
 * **Drizzle ORM** (`postgres-js` driver) — database access and migrations
 * **@fastify/jwt** — Bearer token authentication using the `fastify.authenticate` hook
 * **bcryptjs** — password hashing
